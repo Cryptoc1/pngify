@@ -1,3 +1,6 @@
+<div style="text-align:center;">
+  ![README-scaled.png](screens/readme-scaled.png)
+</div>
 # PNGify
 PNGify, or pngify, is a python module that uses [Pillow](https://github.com/python-pillow/Pillow) to transcode text as a PNG.
 
