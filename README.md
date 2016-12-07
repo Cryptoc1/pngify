@@ -1,6 +1,8 @@
 <h1 align="center">
 <br>
+<br>
 PNGify
+<br>
 <br>
 </h1>
 
