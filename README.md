@@ -1,6 +1,11 @@
+<h1 align="center">
+<br>
+PNGify
+<br>
+</h1>
+
 ![README-scaled.png](screens/readme-scaled.png)
 
-# PNGify
 PNGify, or pngify, is a python module that uses [Pillow](https://github.com/python-pillow/Pillow) to transcode text as a PNG.
 
 This repo includes the source for both the module, and an example program.
