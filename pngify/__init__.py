@@ -39,7 +39,7 @@ class Image:
             raise Exception("Invalid mode")
 
         for i in range(0, len(string)):
-            if i % 4 == 0:
+            if i % factor == 0:
                 r = ord(string[i])
                 # account for array out-of-bounds
                 g = 0
@@ -49,11 +49,13 @@ class Image:
                 if not i + 2 >= len(string):
                     b = ord(string[i + 2])
 
-                a = 0
-                if not i + 3 >= len(string):
-                    a = ord(string[i + 3])
-                data.append((r, g, b, a))
-
+                if mode == "RGBA":
+                    a = 0
+                    if not i + 3 >= len(string):
+                        a = ord(string[i + 3])
+                    data.append((r, g, b, a))
+                else:
+                    data.append((r, g, b))
         return data
 
     '''
@@ -67,9 +69,9 @@ class Image:
             length = len(self.string)
 
         if mode == "RGBA":
-            n_pixels = length / 4
+            n_pixels = length / 4.
         elif mode == "RGB":
-            n_pixels = length / 4
+            n_pixels = length / 3.
         else:
             raise Exception("Invalid mode")
 
