@@ -18,9 +18,11 @@ Here's what the text of this README becomes:
 
 
 ## Setup/install
-PNGify requires Pillow for manipulating image data.
+PNGify requires Pillow for manipulating image data, and brotli for compressing data.
 
 `$ pip install Pillow`
+
+`$ pip install brotlipy`
 
 then,
 
