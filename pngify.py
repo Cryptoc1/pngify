@@ -22,7 +22,7 @@ def main():
     parser.add_argument("-i", "--input", dest="file_input", type=valid_file, help="The text or image file to transcode", metavar="FILE")
     parser.add_argument("-s", "--string", dest="string_input", help="The string to transcode into an image", metavar="STRING")
     parser.add_argument("-o", "--output", dest="file_output", help="The file to output the result into (whether it be an image, or text file)", metavar="FILE")
-    parser.add_argument("-nc", "--nocompress", dest="compress", help="Disable lossless compression via Brotli", action='store_false')
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit()
@@ -49,13 +49,13 @@ def main():
                 if len(string) <= 0:
                     exit("[!] Cannot transcode an empty string")
                 else:
-                    img = Image(string, "RGBA", compress=args['compress'])
+                    img = Image(string, "RGBA")
 
                     # there could easily be an error with this dirty way of resolving paths
                     img.save(os.path.abspath(file_out))
                     exit("Image saved!")
         elif ext == "png":
-            string = String(os.path.abspath(file_in), compress=args['compress'])
+            string = String(os.path.abspath(file_in))
 
             if file_out == None:
                 exit(string)
@@ -74,7 +74,7 @@ def main():
             string = args['string_input']
             file_out = args['file_output']
 
-            img = Image(string, "RGBA", compress=args['compress'])
+            img = Image(string, "RGBA")
 
             # there could easily be an error with this dirty way of resolving paths
             img.save(os.path.abspath(file_out))
