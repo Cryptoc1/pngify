@@ -12,9 +12,12 @@ class Image:
     @param string The string to transcode
     @param mode The image color mode (RGBA|RGB) defaults to RGBA
     '''
-    def __init__(self, string, mode="RGBA"):
+    def __init__(self, string, mode="RGBA", compress=True):
         self.string = string
-        self.compressed_string = brotli.compress(string)
+        if compress == True:
+            self.compressed_string = brotli.compress(string)
+        else:
+            self.compressed_string = string
         self.mode = mode
         if mode != "RGB" and mode != "RGBA":
             raise Exception("Invalid mode")
@@ -95,7 +98,7 @@ class String:
     @param path Can be the path to an image, a pngify Image, or a Pillow Image
     @param mode (optional) the color mode to use when transcoding the image. If None, the PImage.mode is used
     '''
-    def __init__(self, path, mode=None):
+    def __init__(self, path, mode=None, compress=True):
         if isinstance(path, Image):
             self.image = path.image
         elif isinstance(path, str):
@@ -110,8 +113,10 @@ class String:
             raise Exception("Invalid mode")
 
         self.mode = mode
-
-        self.value = brotli.decompress(self.get_string(list(self.image.getdata())))
+        if compress == True:
+            self.value = brotli.decompress(self.get_string(list(self.image.getdata())))
+        else:
+            self.value = self.get_string(list(self.image.getdata()))
 
     def __repr__(self):
         return self.value
