@@ -1,6 +1,8 @@
-import urllib,os
+import urllib,os,sys
 
-imgur_link = "http://i.imgur.com/1zgGEN8.png" #add direct image link, run script and it will download the mp3 for you
+#sys.argv == imgur link
+
+imgur_link = "http://i.imgur.com/"+sys.argv[1]+".png" #add direct image link, run script and it will download the mp3 for you. ie "1zgGEN8"
 imgur_name = imgur_link.split("/")[3]
 
 urllib.urlretrieve(imgur_link, imgur_name)
