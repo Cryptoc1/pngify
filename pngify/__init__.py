@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import math
 from PIL import Image as PImage
+import brotli
 
 '''
 For transcode strings to Images
@@ -13,11 +14,12 @@ class Image:
     '''
     def __init__(self, string, mode="RGBA"):
         self.string = string
+        self.compressed_string = brotli.compress(string)
         self.mode = mode
         if mode != "RGB" and mode != "RGBA":
             raise Exception("Invalid mode")
         self.image = PImage.new(mode, self.calculate_size(), 0)
-        self.image.putdata(self.string_to_data(mode, string))
+        self.image.putdata(self.string_to_data(mode, self.compressed_string))
 
     def save(self, path):
         # TODO: verify path
@@ -27,7 +29,7 @@ class Image:
         if mode == None:
             mode = self.mode
         if string == None:
-            string = self.string
+            string = self.compressed_string
 
         data = []
 
@@ -66,7 +68,7 @@ class Image:
         if mode == None:
             mode = self.mode
         if length == None:
-            length = len(self.string)
+            length = len(self.compressed_string)
 
         if mode == "RGBA":
             n_pixels = length / 4.
@@ -109,7 +111,7 @@ class String:
 
         self.mode = mode
 
-        self.value = self.get_string(list(self.image.getdata()))
+        self.value = brotli.decompress(self.get_string(list(self.image.getdata())))
 
     def __repr__(self):
         return self.value
