@@ -1,7 +1,75 @@
 #!/usr/bin/env python
-import math
+import sys
+import math, re
 from PIL import Image as PImage
-import brotli
+import brotli, zlib
+import bencoder
+
+VERSION = 1
+
+# Abstraction for the header (a bencoded string)
+class Header:
+    START_DELIMETER = ';'
+    END_DELIMETER = ';\t\t\t'
+
+    def __init__(self, raw=None, data=None):
+        self.mode = "RGBA"
+        self.values = {}
+
+        if raw != None:
+            self.from_string(raw)
+        if data != None:
+            self.from_data(data)
+
+
+    def __str__(self):
+        return self.to_string()
+
+    def __repr__(self):
+        return self.to_string()
+
+    '''
+    Parse a bencoded (with our delimeters) string to be used as the represented Header
+    '''
+    def from_string(self, string):
+        self.raw = string
+        start = string.find(self.START_DELIMETER) + len(self.START_DELIMETER)
+        string = string[start:string.find(self.END_DELIMETER, start)]
+        self.values = bencoder.decode(string)
+
+        return self.values
+
+    '''
+    Parse the header from raw pixel data
+    '''
+    def from_data(self, data, mode="RGBA"):
+        if mode != "RGB" and mode != "RGBA":
+            raise Exception("Invalid mode")
+
+        if not isinstance(data, list):
+            data = list(data)
+
+        string = ""
+        for pixel in data:
+            string += chr(pixel[0])
+            string += chr(pixel[1])
+            string += chr(pixel[2])
+            if mode == "RGBA":
+                string += chr(pixel[3])
+
+        return self.from_string(string)
+
+    '''
+    Return a bencoded string representing the Header
+    '''
+    def to_string(self):
+        return "{0}{1}{2}".format(self.START_DELIMETER, bencoder.encode(self.values), self.END_DELIMETER)
+
+    def get(self, key):
+        return self.values[key]
+
+    def set(self, key, value):
+        self.values[key] = value
 
 '''
 For transcode strings to Images
@@ -12,27 +80,90 @@ class Image:
     @param string The string to transcode
     @param mode The image color mode (RGBA|RGB) defaults to RGBA
     '''
-    def __init__(self, string, mode="RGBA", compress=True):
-        self.string = string
-        if compress == True:
-            self.compressed_string = brotli.compress(string)
-        else:
-            self.compressed_string = string
+    def __init__(self, mode="RGBA", compression_method="None"):
         self.mode = mode
         if mode != "RGB" and mode != "RGBA":
             raise Exception("Invalid mode")
-        self.image = PImage.new(mode, self.calculate_size(), 0)
-        self.image.putdata(self.string_to_data(mode, self.compressed_string))
+
+        self.compression_method = compression_method
+
+        # default header
+        self.header = Header()
+        self.header.set('v', VERSION)
+        self.header.set('cm', compression_method)
+
+        # init empty image prop. to hold the PIL Image
+        self.image = None
+
+    def new(self, string):
+        self.string = string
+        self.value = self.header.to_string() + self.compress(self.string)
+
+        self.image = PImage.new(self.mode, self.calculate_size(length=len(self.value)), 0)
+
+        self.data = self.encode(self.value)
+        self.image.putdata(self.data)
+
+    def open(self, path):
+        self.image = PImage.open(path)
+        self.data = self.image.getdata()
+        self.value = self.decode(self.data)
+        self.header = Header(data=self.data)
+
+        # if a compression_method wasn't specified, try to determine from the header
+        if self.compression_method == "None":
+            self.compression_method = self.header.get('cm')
+
+        if self.compression_method != self.header.get('cm'):
+            raise Exception('Specified compression_method is different than that found in PNGify Header')
+
+        self.string = self.decompress(self.trim_header(self.value))
+
+    def compress(self, string=None, compression_method="None"):
+        if string == None:
+            string = self.string
+        if compression_method == "None":
+            compression_method = self.compression_method
+
+        if compression_method == "None":
+            return string
+        elif compression_method.lower() == "brotli":
+            return brotli.compress(string)
+        elif compression_method == "zlib":
+            return zlib.compress(string)
+        else:
+            raise Exception("Invalid compression_method: {0}".format(compression_method))
+
+    def decompress(self, string=None, compression_method=None):
+        if string == None:
+            string = self.string
+        if compression_method == None:
+            compression_method = self.compression_method
+
+        if compression_method == "None":
+            return string
+        elif compression_method.lower() == "brotli":
+            return brotli.decompress(string)
+        elif compression_method == "zlib":
+            return zlib.decompress(string)
+        else:
+            raise Exception("Invalid compression_method: {0}".format(compression_method))
 
     def save(self, path):
         # TODO: verify path
+
         self.image.save(path)
 
-    def string_to_data(self, mode=None, string=None):
+    '''
+    returns the string encoded as pixel data
+    '''
+    def encode(self, string=None, mode=None):
         if mode == None:
             mode = self.mode
-        if string == None:
-            string = self.compressed_string
+
+        # probably not needed because of the check below
+        if mode != "RGB" and mode != "RGBA":
+            raise Exception("Invalid mode: {0}".format(mode))
 
         data = []
 
@@ -41,7 +172,7 @@ class Image:
         elif mode == "RGB":
             factor = 3
         else:
-            raise Exception("Invalid mode")
+            raise Exception("Invalid mode: {0}".format(mode))
 
         for i in range(0, len(string)):
             if i % factor == 0:
@@ -61,7 +192,33 @@ class Image:
                     data.append((r, g, b, a))
                 else:
                     data.append((r, g, b))
+
         return data
+
+    '''
+    returns the pixel data as a string
+    '''
+    def decode(self, data=None, mode=None):
+        if mode == None:
+            mode = self.mode
+
+        if mode != "RGB" and mode != "RGBA":
+            raise Exception("Invalid mode: {0}".format(mode))
+
+        if data == None:
+            data = self.image.getdata()
+        elif not isinstance(data, list):
+            data = list(data)
+
+        string = ""
+        for pixel in data:
+            string += chr(pixel[0])
+            string += chr(pixel[1])
+            string += chr(pixel[2])
+            if mode == "RGBA":
+                string += chr(pixel[3])
+
+        return string
 
     '''
     Calculates the size needed to fit a string with a length `length`, using color mode `mode`
@@ -91,60 +248,8 @@ class Image:
 
         return (int(w), int(h))
 
-
-class String:
-    '''
-    A pngify String, from an image!
-    @param path Can be the path to an image, a pngify Image, or a Pillow Image
-    @param mode (optional) the color mode to use when transcoding the image. If None, the PImage.mode is used
-    '''
-    def __init__(self, path, mode=None, compress=True):
-        if isinstance(path, Image):
-            self.image = path.image
-        elif isinstance(path, str):
-            self.image = PImage.open(path)
-        elif isinstance(path, PImage):
-            self.image = path
-
-        if mode == None:
-            mode = self.image.mode
-
-        if mode != "RGB" and mode != "RGBA":
-            raise Exception("Invalid mode")
-
-        self.mode = mode
-        if compress == True:
-            self.value = brotli.decompress(self.get_string(list(self.image.getdata())))
-        else:
-            self.value = self.get_string(list(self.image.getdata()))
-
-    def __repr__(self):
-        return self.value
-
-    def __str__(self):
-        return self.value
-
-    def get_string(self, data=None, mode=None):
-        if mode == None:
-            mode = self.mode
-
-        if mode != "RGB" and mode != "RGBA":
-            raise Exception("Invalid mode")
-
-        if data == None:
-            data = self.image.getdata()
-        elif not isinstance(data, list):
-            data = list(data)
-
-        string = ""
-        for pixel in data:
-            string += chr(pixel[0])
-            string += chr(pixel[1])
-            string += chr(pixel[2])
-            if mode == "RGBA":
-                string += chr(pixel[3])
-
-        return string
+    def trim_header(self, string):
+        return string[string.find(Header.END_DELIMETER) + len(Header.END_DELIMETER):]
 
 if __name__ == "__main__":
     print("pngify is not meant to be run as a standalone program.")

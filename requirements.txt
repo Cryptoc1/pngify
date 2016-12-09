@@ -1,1 +1,2 @@
 Pillow==3.4.2
+brotlipy==0.6.0
