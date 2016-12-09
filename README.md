@@ -35,7 +35,7 @@ Cheers for simple text files!
 
 ## Usage
 ```
-usage: pngify.py [-h] [-i FILE] [-s STRING] [-o FILE] [-nc]
+usage: pngify.py [-h] [-i FILE] [-s STRING] [-o FILE]
 
 Transcode text between PNGs
 
@@ -48,7 +48,6 @@ optional arguments:
   -o FILE, --output FILE
                         The file to output the result into (whether it be an
                         image, or text file)
-  -nc, --nocompress     Disable lossless compression via Brotli
 ```
 
 #### Found a bug?

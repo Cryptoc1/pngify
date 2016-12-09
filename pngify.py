@@ -22,7 +22,7 @@ def main():
     parser.add_argument("-i", "--input", dest="file_input", type=valid_file, help="The text or image file to transcode", metavar="FILE")
     parser.add_argument("-s", "--string", dest="string_input", help="The string to transcode into an image", metavar="STRING")
     parser.add_argument("-o", "--output", dest="file_output", help="The file to output the result into (whether it be an image, or text file)", metavar="FILE")
-    parser.add_argument("-c", "--compress", dest="compression_method", help="Compression method to compress the data with", metavar="[brotli,zlib]", type=str, const="None", nargs="?", default="None")
+    parser.add_argument("-c", "--compress", dest="compression_method", help="Compression method to compress the data with", metavar="brotli,zlib", type=str, const="None", nargs="?", default="None")
 
     if len(sys.argv) == 1:
         parser.print_help()
