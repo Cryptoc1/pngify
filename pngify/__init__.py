@@ -32,9 +32,9 @@ class Header:
     Parse a bencoded (with our delimeters) string to be used as the represented Header
     '''
     def from_string(self, string):
-        self.raw = string
         start = string.find(self.START_DELIMETER) + len(self.START_DELIMETER)
         string = string[start:string.find(self.END_DELIMETER, start)]
+        self.raw = string
         self.values = bencoder.decode(string)
 
         return self.values
