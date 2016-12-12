@@ -1,8 +1,10 @@
-import urllib, os, sys, validators
+#!/usr/bin/env python
+import urllib, os, sys
+import validators
 from argparse import ArgumentParser
 
 '''
-Note: this is stricly for png to mp3 conversion. It's designed to work that way, but can be changed below if needed (not reccomended).
+Note: this is strictly for png to mp3 conversion. It's designed to work that way, but can be changed below if needed (not reccomended).
 '''
 
 def exit(message=""):
