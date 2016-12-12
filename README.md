@@ -23,6 +23,8 @@ PNGify requires Pillow for manipulating image data, and brotli for compressing d
 
 `$ pip install brotlipy`
 
+`$ pip install bencoder`
+
 then,
 
 `$ ./pngify.py -h`
