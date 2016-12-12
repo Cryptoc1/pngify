@@ -10,7 +10,7 @@ def valid_file(x):
     if not os.path.exists(x):
         # Argparse uses the ArgumentTypeError to give a rejection message like:
         # error: argument input: x does not exist
-        exit("{0} does not exist".format(x))
+        exit("[!] [pngify.py] {0} does not exist".format(x))
     return x
 
 def exit(message=""):
